@@ -88,3 +88,9 @@ endif ()
 if (BUILD_API_TESTS)
     add_subdirectory("tests")
 endif ()
+
+
+include_directories("${CMAKE_SOURCE_DIR}/include/sc2api"
+"${CMAKE_SOURCE_DIR}/include/sc2lib"
+"${CMAKE_SOURCE_DIR}/src/sc2api"
+"${CMAKE_SOURCE_DIR}/src/sc2lib")
