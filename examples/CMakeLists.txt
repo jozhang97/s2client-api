@@ -34,6 +34,7 @@ add_executable(tutorial "tutorial.cc")
 set_target_properties(tutorial PROPERTIES FOLDER examples)
 target_link_libraries(tutorial sc2api sc2utils)
 
+
 #bot_mp
 add_executable(bot_mp "bot_mp.cc" ${common_sources})
 set_target_properties(bot_mp PROPERTIES FOLDER examples)

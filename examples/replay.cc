@@ -4,7 +4,9 @@
 
 #include <iostream>
 
-const char* kReplayFolder = "E:/Replays/";
+using namespace sc2;
+
+const char* kReplayFolder = "/home/jeffrey/MyReplays/";
 
 class Replay : public sc2::ReplayObserver {
 public:
@@ -27,6 +29,7 @@ public:
     }
 
     void OnStep() final {
+        printf("STEP");
     }
 
     void OnGameEnd() final {
@@ -51,7 +54,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+
     if (!coordinator.SetReplayPath(kReplayFolder)) {
+        printf("%s \n", kReplayFolder);
         std::cout << "Unable to find replays." << std::endl;
         return 1;
     }
@@ -60,6 +65,17 @@ int main(int argc, char* argv[]) {
 
     coordinator.AddReplayObserver(&replay_observer);
 
-    while (coordinator.Update());
+    coordinator.SetParticipants({
+        CreateComputer(Race::Zerg),
+        CreateComputer(Race::Terran)
+    });
+
+    coordinator.StartGame(sc2::kMapBelShirVestigeLE);
+
+    int i = 0;
+    while (i++ < 100){
+        printf("HERE");
+        coordinator.Update();
+    }
     while (!sc2::PollKeyPress());
 }
