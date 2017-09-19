@@ -8,6 +8,16 @@ using namespace sc2;
 
 const char* kReplayFolder = "/home/jeffrey/MyReplays/";
 
+
+/**
+    1. Store the actions in OnStep
+    2. Stop the replay after N iterations
+    3. Start a multiplayer game.
+    4. Pass the stored actions into the multiplayer game. 
+    
+    Multiplayer game is now ready for two of our agents. 
+*/
+
 class Replay : public sc2::ReplayObserver {
 public:
     std::vector<uint32_t> count_units_built_;
@@ -54,9 +64,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-
     if (!coordinator.SetReplayPath(kReplayFolder)) {
-        printf("%s \n", kReplayFolder);
+        printf("Replay Folder: %s \n", kReplayFolder);
         std::cout << "Unable to find replays." << std::endl;
         return 1;
     }
@@ -64,18 +73,21 @@ int main(int argc, char* argv[]) {
     Replay replay_observer;
 
     coordinator.AddReplayObserver(&replay_observer);
+/*
 
     coordinator.SetParticipants({
         CreateComputer(Race::Zerg),
         CreateComputer(Race::Terran)
     });
 
+    coordinator.LaunchStarcraft();
     coordinator.StartGame(sc2::kMapBelShirVestigeLE);
+*/
 
     int i = 0;
     while (i++ < 100){
-        printf("HERE");
         coordinator.Update();
     }
+    printf("DONE in %d ticks\n", i);
     while (!sc2::PollKeyPress());
 }
