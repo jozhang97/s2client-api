@@ -138,14 +138,53 @@ int main(int argc, char* argv[]) {
     multiagent_coordinator.LaunchStarcraft();
 
     multiagent_coordinator.StartGame(sc2::kMapBelShirVestigeLE);
+
     i = 0;
-    while (i++ < stop_iter){
-        // pass in actions here 
+    while (i++ < stop_iter) {
         printf("Iter: %d \n", i);
-        if (replay_observer.RawActionsEmpty()) {
-            break;
-        }
-        raw = replay_observer.GetNextRawActions();
         replay_coordinator.Update();
     }
+}
+
+void run_raw_actions(RawActions* raw, ActionInterface* action_interface) {
+    int action_index = 0;
+    int tag_index = 0;
+    ActionRaw action; 
+    AbilityID ability_id; 
+    std::vector<Tag> unit_tags;
+
+    for (action_index = 0; action_index < raw->size(); action_index++) {
+        action = (*raw)[action_index];
+        ability_id = action.ability_id;
+        unit_tags = action.unit_tags;
+        switch (action.target_type) {
+            case sc2::ActionRaw::TargetNone: {
+                for (tag_index = 0; tag_index < unit_tags.size(); tag_index++) {
+                    action_interface->UnitCommand(unit_tags[tag_index], ability_id);
+                }
+                break;
+            }
+            case sc2::ActionRaw::TargetUnitTag: {
+                for (tag_index = 0; tag_index < unit_tags.size(); tag_index++) {
+                    action_interface->UnitCommand(unit_tags[tag_index], ability_id, action.target_tag);
+                }
+                break;
+            }
+            case sc2::ActionRaw::TargetPosition: {
+                for (tag_index = 0; tag_index < unit_tags.size(); tag_index++) {
+                    action_interface->UnitCommand(unit_tags[tag_index], ability_id, action.target_point);
+                }
+                break;
+            }
+        }
+    }
+    action_interface.SendActions();
+}
+
+void run_next_raw_actions(Replay *replay_observer, ActionInterface* action_interface) {
+    if (replay_observer->RawActionsEmpty()) {
+        return;
+    }
+    RawActions raw = replay_observer->GetNextRawActions();
+    run_raw_actions(&raw, action_interface);
 }
