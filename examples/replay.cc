@@ -86,11 +86,16 @@ public:
 
 class Bot : public Agent {
 public: 
+    int stop_iter;
+    Replay* replay_observer;
+    Bot(): Agent() {}
+    Bot(int i, Replay* o): Agent(), stop_iter(i), replay_observer(o)  {}
     virtual void OnGameStart() final {
         printf("Multiplayer game started \n");
     }
     virtual void OnStep() final {
         printf("Multiplayer game stepping \n");
+        ActionInterface* action_interface = Actions();
     }
 };
 
@@ -100,9 +105,8 @@ int main(int argc, char* argv[]) {
     sc2::Coordinator replay_coordinator;
     sc2::Coordinator multiagent_coordinator;
     Replay replay_observer;
-    Bot bot; 
-    Bot bot1; 
-    RawActions raw;
+    Bot bot(i, &replay_observer); 
+    Bot bot1(i, &replay_observer); 
 
     printf("Starting replay \n ");
     if (!replay_coordinator.LoadSettings(argc, argv)) {
@@ -114,7 +118,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     replay_coordinator.AddReplayObserver(&replay_observer);
-
     while (i++ < stop_iter){
         replay_coordinator.Update();
     }
@@ -136,14 +139,13 @@ int main(int argc, char* argv[]) {
         CreateParticipant(Race::Terran, &bot1)
     });
     multiagent_coordinator.LaunchStarcraft();
-
     multiagent_coordinator.StartGame(sc2::kMapBelShirVestigeLE);
-
     i = 0;
     while (i++ < stop_iter) {
         printf("Iter: %d \n", i);
         replay_coordinator.Update();
     }
+    printf("Finished multiplayer game \n ");
 }
 
 void run_raw_actions(RawActions* raw, ActionInterface* action_interface) {
