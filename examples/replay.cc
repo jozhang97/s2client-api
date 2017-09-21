@@ -178,7 +178,7 @@ void run_raw_actions(RawActions* raw, ActionInterface* action_interface) {
             }
         }
     }
-    action_interface.SendActions();
+    action_interface->SendActions();
 }
 
 void run_next_raw_actions(Replay *replay_observer, ActionInterface* action_interface) {
