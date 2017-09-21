@@ -141,7 +141,7 @@ int LaunchProcesses(ProcessSettings& process_settings, std::vector<Client*> clie
 }
 
 
-void etupPorts(GameSettings& game_settings, std::vector<Agent*>& agents, int port_start) {
+void SetupPorts(GameSettings& game_settings, std::vector<Agent*>& agents, int port_start) {
     // Join the game if there are two human participants.
     // printf("SETUPPORTS: %d \n", port_start);
     int humans = 0;
