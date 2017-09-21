@@ -76,6 +76,12 @@ public:
         raw_actions_array.pop();
         return ret;
     }
+    
+    bool RawActionsEmpty() {
+        return raw_actions_array.empty();
+    }
+            
+
 };
 
 class Bot : public Agent {
@@ -96,6 +102,7 @@ int main(int argc, char* argv[]) {
     Replay replay_observer;
     Bot bot; 
     Bot bot1; 
+    RawActions raw;
 
     printf("Starting replay \n ");
     if (!replay_coordinator.LoadSettings(argc, argv)) {
@@ -134,6 +141,11 @@ int main(int argc, char* argv[]) {
     i = 0;
     while (i++ < stop_iter){
         // pass in actions here 
+        printf("Iter: %d \n", i);
+        if (replay_observer.RawActionsEmpty()) {
+            break;
+        }
+        raw = replay_observer.GetNextRawActions();
         replay_coordinator.Update();
     }
 }
