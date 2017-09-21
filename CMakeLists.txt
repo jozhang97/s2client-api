@@ -94,3 +94,9 @@ include_directories("${CMAKE_SOURCE_DIR}/include/sc2api"
 "${CMAKE_SOURCE_DIR}/include/sc2lib"
 "${CMAKE_SOURCE_DIR}/src/sc2api"
 "${CMAKE_SOURCE_DIR}/src/sc2lib")
+
+
+SET(GCC_COVERAGE_COMPILE_FLAGS "-g")
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
+SET(CMAKE_BUILD_TYPE Debug)
+

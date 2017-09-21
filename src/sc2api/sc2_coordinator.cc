@@ -104,6 +104,36 @@ int LaunchProcesses(ProcessSettings& process_settings, std::vector<Client*> clie
 
         assert(pi.process_id && IsProcessRunning(pi.process_id));
         bool connected = c->Control()->Connect(process_settings.net_address, pi.port, process_settings.timeout_ms);
+//        printf("%d \n", pi.port);
+        assert(connected);
+    }
+
+    return last_port;
+}
+
+int LaunchProcesses(ProcessSettings& process_settings, std::vector<Client*> clients, int window_width, int window_height, int window_start_x, int window_start_y, int port_offset) {
+    int last_port = 0;
+    // Start an sc2 process for each bot.
+    int clientIndex = 0;
+    for (auto c : clients) {
+        last_port = LaunchProcess(process_settings, 
+            c, 
+            window_width, 
+            window_height, 
+            window_start_x, 
+            window_start_y, 
+            process_settings.port_start + static_cast<int>(process_settings.process_info.size()) - 1 + port_offset, 
+            clientIndex++);
+    }
+
+    // Since connect is blocking do it after the processes are launched.
+    for (std::size_t i = 0; i < clients.size(); ++i) {
+        const ProcessInfo& pi = process_settings.process_info[i];
+        Client* c = clients[i];
+
+        assert(pi.process_id && IsProcessRunning(pi.process_id));
+        bool connected = c->Control()->Connect(process_settings.net_address, pi.port, process_settings.timeout_ms);
+//        printf("%d \n", pi.port);
         assert(connected);
     }
 
@@ -111,8 +141,9 @@ int LaunchProcesses(ProcessSettings& process_settings, std::vector<Client*> clie
 }
 
 
-void SetupPorts(GameSettings& game_settings, std::vector<Agent*>& agents, int port_start) {
+void etupPorts(GameSettings& game_settings, std::vector<Agent*>& agents, int port_start) {
     // Join the game if there are two human participants.
+    // printf("SETUPPORTS: %d \n", port_start);
     int humans = 0;
     for (const auto& p_setup : game_settings.player_setup) {
         if (p_setup.type == sc2::PlayerType::Participant) {
@@ -131,6 +162,7 @@ void SetupPorts(GameSettings& game_settings, std::vector<Agent*>& agents, int po
             game_settings.ports.client_ports.push_back(port_set);
         }
     }
+    // printf("Port end: %d", port_start);
 }
 
 static void CallOnStep(Agent* a) {
@@ -654,9 +686,11 @@ void Coordinator::LaunchStarcraft() {
     // TODO: Check the case that a pid in the process_info_ struct is no longer running.
     // The process may have died.
     int port_start = 0;
+    //printf("###@@@@ Port start: %d \n", port_start);
     if (imp_->process_settings_.process_info.size() != imp_->agents_.size()) {
+        // adding an port_offset of 100 to accomodate for previously running replay 
         port_start = LaunchProcesses(imp_->process_settings_,
-            std::vector<sc2::Client*>(imp_->agents_.begin(), imp_->agents_.end()), imp_->window_width_, imp_->window_height_, imp_->window_start_x_, imp_->window_start_y_);
+            std::vector<sc2::Client*>(imp_->agents_.begin(), imp_->agents_.end()), imp_->window_width_, imp_->window_height_, imp_->window_start_x_, imp_->window_start_y_, 100);
     }
 
     SetupPorts(imp_->game_settings_, imp_->agents_, port_start);
@@ -666,6 +700,8 @@ void Coordinator::LaunchStarcraft() {
 }
 
 void Coordinator::LeaveGame() {
+// TODO jeffrey close socket 
+// close(sockfd)
     for (auto c : imp_->agents_) {
         c->Control()->RequestLeaveGame();
     }

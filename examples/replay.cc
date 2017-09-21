@@ -51,7 +51,9 @@ public:
             }
         }
         raw_actions_array.push(raw); // make sure don't need reserve()
-        printf("ONSTEP LOOK AT ACTIONS %d \n", raw.size());
+        if (raw.size() != 0) 
+            printf("ONSTEP LOOK AT ACTIONS %d \n", raw.size());
+
             
     }
 
@@ -79,10 +81,10 @@ public:
 class Bot : public Agent {
 public: 
     virtual void OnGameStart() final {
-        printf("Multiplayer game started");
+        printf("Multiplayer game started \n");
     }
     virtual void OnStep() final {
-        printf("Multiplayer game stepping");
+        printf("Multiplayer game stepping \n");
     }
 };
 
@@ -93,6 +95,7 @@ int main(int argc, char* argv[]) {
     sc2::Coordinator multiagent_coordinator;
     Replay replay_observer;
     Bot bot; 
+    Bot bot1; 
 
     printf("Starting replay \n ");
     if (!replay_coordinator.LoadSettings(argc, argv)) {
@@ -108,7 +111,7 @@ int main(int argc, char* argv[]) {
     while (i++ < stop_iter){
         replay_coordinator.Update();
     }
-    replay_coordinator.LeaveGame();
+    replay_coordinator.LeaveGame(); // doesn't do anything since no agents
     printf("Finished replay with %d ticks \n ", i);
 
     
@@ -122,8 +125,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     multiagent_coordinator.SetParticipants({
-        CreateComputer(Race::Zerg),
-        CreateParticipant(Race::Terran, &bot)
+        CreateParticipant(Race::Terran, &bot),
+        CreateParticipant(Race::Terran, &bot1)
     });
     multiagent_coordinator.LaunchStarcraft();
 
