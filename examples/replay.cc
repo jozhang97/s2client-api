@@ -178,7 +178,14 @@ int main(int argc, char* argv[]) {
   replay_coordinator.AddReplayObserver(&replay_observer);
   
   replay_coordinator.Update();
-  map_name = replay_observer.ReplayControl()->GetReplayInfo().map_name.c_str();
+
+  // can only call after first Update()
+  // GET THE MAP NAME WITHOUT SPACE 
+  std::string map_name_str = std::string(replay_observer.ReplayControl()->GetReplayInfo().map_name.c_str());
+  map_name_str.erase(remove_if(map_name_str.begin(), map_name_str.end(), isspace), map_name_str.end());
+  map_name = map_name_str.c_str();
+
+
   while (++i < stop_iter){
     replay_coordinator.Update();
   }
