@@ -207,6 +207,8 @@ public:
     bool ShouldIgnore(ReplayObserver* r, const std::string& file);
     bool ShouldRelaunch(ReplayObserver* r);
 
+    // char* GetReplayMap();
+
     void StepAgents();
     void StepAgentsRealtime();
     void StepReplayObservers();
@@ -263,6 +265,11 @@ bool CoordinatorImp::ShouldIgnore(ReplayObserver* r, const std::string& file) {
     // If the replay isn't being pruned based on replay info start it.
     return r->IgnoreReplay(r->ReplayControl()->GetReplayInfo(), replay_settings_.player_id);
 }
+
+//char* CoordinatorImp::GetReplayMap() {
+//    const ReplayInfo& replay_info = r->ReplayControl()->GetReplayInfo();
+//    return replay_info.map_name;
+//}
 
 bool CoordinatorImp::ShouldRelaunch(ReplayObserver* r) {
     const ReplayInfo& replay_info = r->ReplayControl()->GetReplayInfo();

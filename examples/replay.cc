@@ -164,6 +164,7 @@ int main(int argc, char* argv[]) {
   Replay replay_observer;
   Bot bot(i, &replay_observer);
   Bot bot1(i, &replay_observer);
+  const char* map_name;
 
   printf("Starting replay \n ");
   if (!replay_coordinator.LoadSettings(argc, argv)) {
@@ -175,12 +176,14 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   replay_coordinator.AddReplayObserver(&replay_observer);
-  while (i++ < stop_iter){
+  
+  replay_coordinator.Update();
+  map_name = replay_observer.ReplayControl()->GetReplayInfo().map_name.c_str();
+  while (++i < stop_iter){
     replay_coordinator.Update();
   }
   replay_coordinator.LeaveGame(); // doesn't do anything since no agents
   printf("Finished replay with %d ticks \n ", i);
-
 
   replay_coordinator.WaitForAllResponses();
   multiagent_coordinator.WaitForAllResponses();
@@ -196,7 +199,7 @@ int main(int argc, char* argv[]) {
     CreateParticipant(Race::Terran, &bot1)
   });
   multiagent_coordinator.LaunchStarcraft();
-  multiagent_coordinator.StartGame(sc2::kMapBelShirVestigeLE);
+  multiagent_coordinator.StartGame(map_name);
   i = 0;
   while (i++ < stop_iter) {
     //printf("Iter: %d \n", i);
