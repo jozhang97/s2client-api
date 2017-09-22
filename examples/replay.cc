@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
   Replay replay_observer;
   Bot bot(i, &replay_observer);
   Bot bot1(i, &replay_observer);
-  const char* map_name;
+  std::string map_name;
 
   printf("Starting replay \n ");
   if (!replay_coordinator.LoadSettings(argc, argv)) {
@@ -181,9 +181,8 @@ int main(int argc, char* argv[]) {
 
   // can only call after first Update()
   // GET THE MAP NAME WITHOUT SPACE 
-  std::string map_name_str = std::string(replay_observer.ReplayControl()->GetReplayInfo().map_name.c_str());
-  map_name_str.erase(remove_if(map_name_str.begin(), map_name_str.end(), isspace), map_name_str.end());
-  map_name = map_name_str.c_str();
+  map_name = std::string(replay_observer.ReplayControl()->GetReplayInfo().map_name.c_str());
+  map_name.erase(remove_if(map_name.begin(), map_name.end(), isspace), map_name.end());
 
 
   while (++i < stop_iter){
@@ -206,7 +205,9 @@ int main(int argc, char* argv[]) {
     CreateParticipant(Race::Terran, &bot1)
   });
   multiagent_coordinator.LaunchStarcraft();
-  multiagent_coordinator.StartGame(map_name);
+  multiagent_coordinator.StartGame("Ladder/AbyssalReefLE.SC2Map");
+  // multiagent_coordinator.StartGame(sc2::kMapAbyssalReefLE);
+  //  multiagent_coordinator.StartGame(map_name);
   i = 0;
   while (i++ < stop_iter) {
     //printf("Iter: %d \n", i);
