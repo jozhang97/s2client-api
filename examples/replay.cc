@@ -23,6 +23,7 @@ class Replay : public sc2::ReplayObserver {
 public:
   std::vector<uint32_t> count_units_built_;
   std::queue<RawActions> raw_actions_array;
+  int times_picked = 0;
 
   Replay() :
     sc2::ReplayObserver() {
@@ -52,9 +53,7 @@ public:
     }
     raw_actions_array.push(raw); // make sure don't need reserve()
     if (raw.size() != 0)
-      printf("ONSTEP LOOK AT ACTIONS %d \n", raw.size());
-
-
+      printf("LOOK AT ACTIONS %d \n", raw.size());
   }
 
   void OnGameEnd() final {
@@ -73,15 +72,19 @@ public:
 
   RawActions GetNextRawActions() {
     RawActions ret = raw_actions_array.front();
-    raw_actions_array.pop();
+    if (++times_picked == 2) {
+        raw_actions_array.pop();
+        times_picked = 0;
+    }
     return ret;
   }
 
   bool RawActionsEmpty() {
     return raw_actions_array.empty();
   }
-
-
+  int RawActionsSize() {
+    return raw_actions_array.size();
+  }
 };
 
 void run_raw_actions(RawActions* raw, ActionInterface* action_interface) {
@@ -90,32 +93,40 @@ void run_raw_actions(RawActions* raw, ActionInterface* action_interface) {
   ActionRaw action;
   AbilityID ability_id;
   std::vector<Tag> unit_tags;
-
+  if (raw->size() == 0) {
+        return;
+  }
   for (action_index = 0; action_index < raw->size(); action_index++) {
     action = (*raw)[action_index];
     ability_id = action.ability_id;
     unit_tags = action.unit_tags;
+    printf("Ability_id %d", ability_id);
+
     switch (action.target_type) {
       case sc2::ActionRaw::TargetNone: {
         for (tag_index = 0; tag_index < unit_tags.size(); tag_index++) {
+          printf("Tags %d", unit_tags[tag_index]);
           action_interface->UnitCommand(unit_tags[tag_index], ability_id);
         }
         break;
       }
       case sc2::ActionRaw::TargetUnitTag: {
         for (tag_index = 0; tag_index < unit_tags.size(); tag_index++) {
+          printf("Tags %d", unit_tags[tag_index]);
           action_interface->UnitCommand(unit_tags[tag_index], ability_id, action.target_tag);
         }
         break;
       }
       case sc2::ActionRaw::TargetPosition: {
         for (tag_index = 0; tag_index < unit_tags.size(); tag_index++) {
+          printf("Tags %d", unit_tags[tag_index]);
           action_interface->UnitCommand(unit_tags[tag_index], ability_id, action.target_point);
         }
         break;
       }
     }
   }
+  printf("PUSHING LOOK AT ACTIONS %d \n", raw->size());
   action_interface->SendActions();
 }
 
@@ -133,9 +144,11 @@ public:
   Replay* replay_observer;
   Bot(): Agent() {}
   Bot(int i, Replay* o): Agent(), stop_iter(i), replay_observer(o)  {}
+
   virtual void OnGameStart() final {
     printf("Multiplayer game started \n");
   }
+
   virtual void OnStep() final {
     printf("Multiplayer game stepping \n");
     ActionInterface* action_interface = Actions();
@@ -186,8 +199,8 @@ int main(int argc, char* argv[]) {
   multiagent_coordinator.StartGame(sc2::kMapBelShirVestigeLE);
   i = 0;
   while (i++ < stop_iter) {
-    printf("Iter: %d \n", i);
-    replay_coordinator.Update();
+    //printf("Iter: %d \n", i);
+    multiagent_coordinator.Update();
   }
   printf("Finished multiplayer game \n ");
 }
