@@ -185,42 +185,59 @@ void run_replay_coordinator(Replay *replay_observer, int stop_iter, int argc, ch
 int main(int argc, char* argv[]) {
   int stop_iter = 10;
   int i = 0;
-  sc2::Coordinator replay_coordinator;
+  sc2::Coordinator replay_coordinator, replay_coordinator2;
   sc2::Coordinator multiagent_coordinator;
-  Replay replay_observer;
+  Replay replay_observer, replay_observer2;
   Bot bot(i, &replay_observer);
-  Bot bot1(i, &replay_observer);
+  Bot bot2(i, &replay_observer);
   std::string map_name;
 
-  printf("Starting replay \n ");
+// --------------------------------------------------------------------------------------------------------
+  printf("Starting replay first time \n ");
   if (!replay_coordinator.LoadSettings(argc, argv)) {
     return 1;
   }
   if (!replay_coordinator.SetReplayPath(kReplayFolder)) {
-    printf("Replay Folder: %s \n", kReplayFolder);
     std::cout << "Unable to find replays." << std::endl;
     return 1;
   }
   replay_coordinator.AddReplayObserver(&replay_observer);
-  
-  replay_coordinator.Update();
-
-  // can only call after first Update()
-  map_name = std::string(replay_observer->ReplayControl()->GetReplayInfo().map_name.c_str());
-  map_name.erase(remove_if(map_name.begin(), map_name.end(), isspace), map_name.end());
-  printf("Map name: %s \n", map_name);
-
 
   while (++i < stop_iter){
     replay_coordinator.Update();
   }
+  i = 0;
   replay_coordinator.LeaveGame(); // doesn't do anything since no agents
-  printf("Finished replay with %d ticks \n ", i);
+// --------------------------------------------------------------------------------------------------------
+  printf("Starting replay second time \n ");
+  if (!replay_coordinator2.LoadSettings(argc, argv)) {
+    return 1;
+  }
+  if (!replay_coordinator2.SetReplayPath(kReplayFolder)) {
+    std::cout << "Unable to find replays." << std::endl;
+    return 1;
+  }
+  replay_coordinator2.AddReplayObserver(&replay_observer2);
 
-  printf("Finished replay with %d ticks \n ", i);
+  while (++i < stop_iter){
+    replay_coordinator2.Update();
+  }
+  i = 0;
+  replay_coordinator2.LeaveGame(); // doesn't do anything since no agents
+// --------------------------------------------------------------------------------------------------------
+  // can only call after first Update()
+  map_name = std::string(replay_observer.ReplayControl()->GetReplayInfo().map_name.c_str());
+  map_name.erase(remove_if(map_name.begin(), map_name.end(), isspace), map_name.end());
+  printf("Map name: %s \n", map_name.c_str());
+
+// --------------------------------------------------------------------------------------------------------
+
+  replay_coordinator.WaitForAllResponses();
+  replay_coordinator2.WaitForAllResponses();
   multiagent_coordinator.WaitForAllResponses();
   while (!sc2::PollKeyPress());
 
+// --------------------------------------------------------------------------------------------------------
 
   printf("Starting multiplayer game \n ");
   if (!multiagent_coordinator.LoadSettings(argc, argv)) {
@@ -228,17 +245,16 @@ int main(int argc, char* argv[]) {
   }
   multiagent_coordinator.SetParticipants({
     CreateParticipant(Race::Terran, &bot),
-    CreateParticipant(Race::Terran, &bot1)
+    CreateParticipant(Race::Terran, &bot2)
   });
   multiagent_coordinator.LaunchStarcraft();
   multiagent_coordinator.StartGame("Ladder/AbyssalReefLE.SC2Map");
   // multiagent_coordinator.StartGame(sc2::kMapAbyssalReefLE);
   //  multiagent_coordinator.StartGame(map_name);
-  i = 0;
   while (i++ < stop_iter) {
-    //printf("Iter: %d \n", i);
     multiagent_coordinator.Update();
   }
+  i = 0;
   printf("Finished multiplayer game \n ");
 }
 

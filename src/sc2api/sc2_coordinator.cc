@@ -303,7 +303,7 @@ void CoordinatorImp::StartReplay() {
     assert(!replay_observers_.empty());
     if (!starcraft_started_) {
         last_port_ = LaunchProcesses(process_settings_,
-            std::vector<sc2::Client*>(replay_observers_.begin(), replay_observers_.end()), window_width_, window_height_, window_start_x_, window_start_y_);
+            std::vector<sc2::Client*>(replay_observers_.begin(), replay_observers_.end()), window_width_, window_height_, window_start_x_, window_start_y_, 100*num_start_replay);
     }
 
     // Run a replay with each available replay observer.
@@ -701,9 +701,9 @@ void Coordinator::LaunchStarcraft() {
     int port_start = 0;
     //printf("###@@@@ Port start: %d \n", port_start);
     if (imp_->process_settings_.process_info.size() != imp_->agents_.size()) {
-        // adding an port_offset of 100 to accomodate for previously running replay 
+        // adding an port_offset of 200 to accomodate for previously running replay 
         port_start = LaunchProcesses(imp_->process_settings_,
-            std::vector<sc2::Client*>(imp_->agents_.begin(), imp_->agents_.end()), imp_->window_width_, imp_->window_height_, imp_->window_start_x_, imp_->window_start_y_, 100);
+            std::vector<sc2::Client*>(imp_->agents_.begin(), imp_->agents_.end()), imp_->window_width_, imp_->window_height_, imp_->window_start_x_, imp_->window_start_y_, 200);
     }
 
     SetupPorts(imp_->game_settings_, imp_->agents_, port_start);
