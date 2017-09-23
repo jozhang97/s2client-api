@@ -44,7 +44,9 @@ public:
   void OnStep() final {
     const sc2::ObservationInterface* obs = Observation();
     const RawActions& raw = obs->GetRawActions();
+    int num_players = ReplayControl()->GetReplayInfo().num_players;
 
+    printf("PlayerID: %d ", obs->GetPlayerID());
     for (int i = 0; i < raw.size(); i++) {
       printf("Ability_id %d. ", raw[i].ability_id);
       for (int j = 0; j < raw[i].unit_tags.size(); j++) {
@@ -150,14 +152,38 @@ public:
   }
 
   virtual void OnStep() final {
-    printf("Multiplayer game stepping \n");
+    const sc2::ObservationInterface* obs = Observation();
+    printf("PlayerID: %d ", obs->GetPlayerID());
+    
     ActionInterface* action_interface = Actions();
     run_next_raw_actions(replay_observer, action_interface);
+    printf("Multiplayer game stepping \n");
   }
 };
 
+void run_replay_coordinator(Replay *replay_observer, int stop_iter, int argc, char* argv[]) {
+  sc2::Coordinator coordinator;
+  int i = 0;
+  printf("Starting replay \n ");
+  if (!coordinator.LoadSettings(argc, argv)) {
+    exit(1);
+  }
+  if (!coordinator.SetReplayPath(kReplayFolder)) {
+    printf("Replay Folder: %s \n", kReplayFolder);
+    std::cout << "Unable to find replays." << std::endl;
+    exit(1);
+  }
+  coordinator.AddReplayObserver(replay_observer);
+  
+  while (++i < stop_iter){
+    coordinator.Update();
+  }
+  coordinator.LeaveGame(); // doesn't do anything since no agents
+}
+
+
 int main(int argc, char* argv[]) {
-  int stop_iter = 100;
+  int stop_iter = 10;
   int i = 0;
   sc2::Coordinator replay_coordinator;
   sc2::Coordinator multiagent_coordinator;
@@ -180,9 +206,9 @@ int main(int argc, char* argv[]) {
   replay_coordinator.Update();
 
   // can only call after first Update()
-  // GET THE MAP NAME WITHOUT SPACE 
-  map_name = std::string(replay_observer.ReplayControl()->GetReplayInfo().map_name.c_str());
+  map_name = std::string(replay_observer->ReplayControl()->GetReplayInfo().map_name.c_str());
   map_name.erase(remove_if(map_name.begin(), map_name.end(), isspace), map_name.end());
+  printf("Map name: %s \n", map_name);
 
 
   while (++i < stop_iter){
@@ -191,7 +217,7 @@ int main(int argc, char* argv[]) {
   replay_coordinator.LeaveGame(); // doesn't do anything since no agents
   printf("Finished replay with %d ticks \n ", i);
 
-  replay_coordinator.WaitForAllResponses();
+  printf("Finished replay with %d ticks \n ", i);
   multiagent_coordinator.WaitForAllResponses();
   while (!sc2::PollKeyPress());
 

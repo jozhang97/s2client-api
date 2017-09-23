@@ -18,6 +18,8 @@
 
 namespace sc2 {
 
+int num_start_replay = 0;
+
 void RunParallel(const std::function<void(Agent* a)>& step, std::vector<Agent*>& agents) {
     // Run all steps in parallel.
     std::vector<std::thread> threads(agents.size());
@@ -204,6 +206,7 @@ public:
 
     bool StartGame();
     void StartReplay();
+    void StartReplay(int player_id);
     bool ShouldIgnore(ReplayObserver* r, const std::string& file);
     bool ShouldRelaunch(ReplayObserver* r);
 
@@ -291,6 +294,7 @@ bool CoordinatorImp::ShouldRelaunch(ReplayObserver* r) {
 }
 
 void CoordinatorImp::StartReplay() {
+    int id;
     // If no replays given in the settings don't try.
     if (replay_settings_.replay_file.empty()) {
         return;
@@ -323,8 +327,10 @@ void CoordinatorImp::StartReplay() {
             if (ShouldRelaunch(r)) {
                 break;
             }
-
-            bool launched = r->ReplayControl()->LoadReplay(file, interface_settings_, replay_settings_.player_id);
+            id = replay_settings_.player_id + num_start_replay;
+            num_start_replay++;
+            printf("STARTING REPLAY Time number %d", num_start_replay);
+            bool launched = r->ReplayControl()->LoadReplay(file, interface_settings_, id);
             replays.erase(replays.begin());
             if (launched)
                 break;
