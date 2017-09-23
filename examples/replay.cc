@@ -29,14 +29,14 @@ public:
     const sc2::ObservationInterface* obs = Observation();
     const RawActions& raw = obs->GetRawActions();
     int num_players = ReplayControl()->GetReplayInfo().num_players;
-    if (raw.size() != 0) {
-      printf("Replay: PlayerID: %d ", obs->GetPlayerID());
-    }
     for (int i = 0; i < raw.size(); i++) {
       printf("Ability_id %d. ", raw[i].ability_id);
       for (int j = 0; j < raw[i].unit_tags.size(); j++) {
         printf("Tags %d ", raw[i].unit_tags[j]);
       }
+    }
+    if (raw.size() != 0) {
+      printf("Replay: PlayerID: %d \n", obs->GetPlayerID());
     }
     raw_actions_array.push(raw); // make sure don't need reserve()
   }
