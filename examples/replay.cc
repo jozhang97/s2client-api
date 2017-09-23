@@ -21,32 +21,17 @@ const char* kReplayFolder = "/home/jeffrey/MyReplays/";
 
 class Replay : public sc2::ReplayObserver {
 public:
-  std::vector<uint32_t> count_units_built_;
   std::queue<RawActions> raw_actions_array;
-  int times_picked = 0;
-
   Replay() :
     sc2::ReplayObserver() {
   }
-
-  void OnGameStart() final {
-    const sc2::ObservationInterface* obs = Observation();
-    assert(obs->GetUnitTypeData().size() > 0);
-    count_units_built_.resize(obs->GetUnitTypeData().size());
-    std::fill(count_units_built_.begin(), count_units_built_.end(), 0);
-  }
-
-  void OnUnitCreated(const sc2::Unit& unit) final {
-    assert(uint32_t(unit.unit_type) < count_units_built_.size());
-    ++count_units_built_[unit.unit_type];
-  }
-
   void OnStep() final {
     const sc2::ObservationInterface* obs = Observation();
     const RawActions& raw = obs->GetRawActions();
     int num_players = ReplayControl()->GetReplayInfo().num_players;
-
-    printf("PlayerID: %d ", obs->GetPlayerID());
+    if (raw.size() != 0) {
+      printf("Replay: PlayerID: %d ", obs->GetPlayerID());
+    }
     for (int i = 0; i < raw.size(); i++) {
       printf("Ability_id %d. ", raw[i].ability_id);
       for (int j = 0; j < raw[i].unit_tags.size(); j++) {
@@ -54,33 +39,12 @@ public:
       }
     }
     raw_actions_array.push(raw); // make sure don't need reserve()
-    if (raw.size() != 0)
-      printf("LOOK AT ACTIONS %d \n", raw.size());
   }
-
-  void OnGameEnd() final {
-    std::cout << "Units created:" << std::endl;
-    const sc2::ObservationInterface* obs = Observation();
-    const sc2::UnitTypes& unit_types = obs->GetUnitTypeData();
-    for (uint32_t i = 0; i < count_units_built_.size(); ++i) {
-      if (count_units_built_[i] == 0) {
-        continue;
-      }
-
-      std::cout << unit_types[i].name << ": " << std::to_string(count_units_built_[i]) << std::endl;
-    }
-    std::cout << "Finished" << std::endl;
-  }
-
   RawActions GetNextRawActions() {
     RawActions ret = raw_actions_array.front();
-    if (++times_picked == 2) {
-        raw_actions_array.pop();
-        times_picked = 0;
-    }
+    raw_actions_array.pop();
     return ret;
   }
-
   bool RawActionsEmpty() {
     return raw_actions_array.empty();
   }
@@ -103,7 +67,6 @@ void run_raw_actions(RawActions* raw, ActionInterface* action_interface) {
     ability_id = action.ability_id;
     unit_tags = action.unit_tags;
     printf("Ability_id %d", ability_id);
-
     switch (action.target_type) {
       case sc2::ActionRaw::TargetNone: {
         for (tag_index = 0; tag_index < unit_tags.size(); tag_index++) {
@@ -128,7 +91,6 @@ void run_raw_actions(RawActions* raw, ActionInterface* action_interface) {
       }
     }
   }
-  printf("PUSHING LOOK AT ACTIONS %d \n", raw->size());
   action_interface->SendActions();
 }
 
@@ -147,52 +109,26 @@ public:
   Bot(): Agent() {}
   Bot(int i, Replay* o): Agent(), stop_iter(i), replay_observer(o)  {}
 
-  virtual void OnGameStart() final {
-    printf("Multiplayer game started \n");
-  }
-
   virtual void OnStep() final {
     const sc2::ObservationInterface* obs = Observation();
-    printf("PlayerID: %d ", obs->GetPlayerID());
-    
+    printf("Agent: PlayerID: %d \n", obs->GetPlayerID());
     ActionInterface* action_interface = Actions();
     run_next_raw_actions(replay_observer, action_interface);
-    printf("Multiplayer game stepping \n");
   }
 };
 
-void run_replay_coordinator(Replay *replay_observer, int stop_iter, int argc, char* argv[]) {
-  sc2::Coordinator coordinator;
-  int i = 0;
-  printf("Starting replay \n ");
-  if (!coordinator.LoadSettings(argc, argv)) {
-    exit(1);
-  }
-  if (!coordinator.SetReplayPath(kReplayFolder)) {
-    printf("Replay Folder: %s \n", kReplayFolder);
-    std::cout << "Unable to find replays." << std::endl;
-    exit(1);
-  }
-  coordinator.AddReplayObserver(replay_observer);
-  
-  while (++i < stop_iter){
-    coordinator.Update();
-  }
-  coordinator.LeaveGame(); // doesn't do anything since no agents
-}
-
-
 int main(int argc, char* argv[]) {
-  int stop_iter = 10;
+  int stop_iter = 1000;
   int i = 0;
   sc2::Coordinator replay_coordinator, replay_coordinator2;
   sc2::Coordinator multiagent_coordinator;
   Replay replay_observer, replay_observer2;
   Bot bot(i, &replay_observer);
-  Bot bot2(i, &replay_observer);
+  Bot bot2(i, &replay_observer2);
   std::string map_name;
+  char* used_map_name = "Ladder/AbyssalReefLE.SC2Map";
 
-// --------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
   printf("Starting replay first time \n ");
   if (!replay_coordinator.LoadSettings(argc, argv)) {
     return 1;
@@ -208,7 +144,7 @@ int main(int argc, char* argv[]) {
   }
   i = 0;
   replay_coordinator.LeaveGame(); // doesn't do anything since no agents
-// --------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
   printf("Starting replay second time \n ");
   if (!replay_coordinator2.LoadSettings(argc, argv)) {
     return 1;
@@ -224,20 +160,20 @@ int main(int argc, char* argv[]) {
   }
   i = 0;
   replay_coordinator2.LeaveGame(); // doesn't do anything since no agents
-// --------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
   // can only call after first Update()
   map_name = std::string(replay_observer.ReplayControl()->GetReplayInfo().map_name.c_str());
   map_name.erase(remove_if(map_name.begin(), map_name.end(), isspace), map_name.end());
   printf("Map name: %s \n", map_name.c_str());
 
-// --------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 
   replay_coordinator.WaitForAllResponses();
   replay_coordinator2.WaitForAllResponses();
   multiagent_coordinator.WaitForAllResponses();
   while (!sc2::PollKeyPress());
 
-// --------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 
   printf("Starting multiplayer game \n ");
   if (!multiagent_coordinator.LoadSettings(argc, argv)) {
@@ -248,7 +184,7 @@ int main(int argc, char* argv[]) {
     CreateParticipant(Race::Terran, &bot2)
   });
   multiagent_coordinator.LaunchStarcraft();
-  multiagent_coordinator.StartGame("Ladder/AbyssalReefLE.SC2Map");
+  multiagent_coordinator.StartGame(used_map_name);
   // multiagent_coordinator.StartGame(sc2::kMapAbyssalReefLE);
   //  multiagent_coordinator.StartGame(map_name);
   while (i++ < stop_iter) {
